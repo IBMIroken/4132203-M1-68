@@ -1,0 +1,76 @@
+<html>
+    <body>
+        <div> Hello, World!</div>
+    </body>
+
+    <script>
+        // Variables
+        // var, let, const
+         var num = 10;
+         var name;
+         let age = 15;
+        const x = "BRU";
+
+        console.log(x);
+
+
+        // Function 
+        function add(a, b) {
+            let c = a+ b;
+            return c;
+        }
+        let total = add(3, 5);
+        console.log(total);
+
+        let add2 = function(aa, bb) {
+            let c= aa + bb;
+            return c;
+        }
+
+        let add3 = (a, b) => {
+            return a + b;
+            
+        }
+        // Arrays
+        let arr =[-1,2,3,4,5,"name"];
+        console.log(arr[3]);
+
+        const car =  Array("honda","toyota");
+
+        let arp = [[2,5,0],"age"];
+
+        //objects
+        let person ={
+            name: "ice",
+            lastname: "bear",
+            age: 20,
+            child: ["jim","jam"],
+            fuulname: function(){
+                return this.name + " " + this.lastname;
+            }
+        }
+
+        console.log(person.fuulname(), person.child[1]);   //print jam
+
+        //spread operator
+        let arr3 =[...car,...arr];
+        let arr4 =[car,arr];
+
+        console.log(arr3);
+        console.log(arr4);
+
+        //conditional 
+        if(3<5){
+            console.log("true");
+        }
+        else{
+            console.log("false");
+        }
+
+        let chect = 3<5 ? "true" : "false";
+
+    </script>
+    
+    <script src ="app.js"></script>
+
+</html>
