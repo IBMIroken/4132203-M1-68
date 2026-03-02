@@ -1,14 +1,13 @@
-<div>My php</div>
+<div>My PHP</div>
 <?php
+echo "Hello PHP !!!";
 
-echo "Hello PHP !!!";  //print browser
-
-$name ="ice";
-$age = 20;
+$name = "Win";
+$age = 22;
 
 var_dump($name);
 ?>
-<?= $name." : ".$age ?>
+<?= $name . " : " . $age ?>
 
 <div>
     <form id="fm_blog">

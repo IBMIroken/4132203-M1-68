@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบแจ้งเตือน FCM</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
+    <style>
+        .notification-card {
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center p-4 md:p-8">
+
+    <div class="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-6 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-blue-600 mb-2">FCM Web Receiver</h1>
+            <p class="text-gray-500">ทดสอบการรับการแจ้งเตือนผ่าน Firebase Cloud Messaging</p>
+        </header>
+
+        <!-- Configuration Section -->
+        <section class="mb-8 p-4 border-2 border-dashed border-gray-200 rounded-xl">
+            <h2 class="text-lg font-semibold mb-4">1. ตั้งค่า Firebase Config</h2>
+            <div class="space-y-4">
+                <textarea id="configInput" rows="5" class="w-full p-3 border rounded-lg text-sm font-mono" placeholder='ใส่ Firebase Config JSON ที่นี่...'></textarea>
+                <button id="saveConfig" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition">
+                    เชื่อมต่อ Firebase
+                </button>
+            </div>
+        </section>
+
+        <!-- Registration Token Section -->
+        <section id="tokenSection" class="mb-8 hidden">
+            <h2 class="text-lg font-semibold mb-2">2. Device Token</h2>
+            <div class="bg-gray-100 p-4 rounded-lg relative">
+                <p id="tokenDisplay" class="text-xs break-all font-mono text-gray-700 select-all"></p>
+                <button id="copyToken" class="mt-2 text-sm text-blue-600 hover:underline">คัดลอก Token</button>
+            </div>
+            <p class="text-xs text-red-500 mt-2">* ใช้ Token นี้ในการส่งข้อความผ่าน Firebase Console หรือ API</p>
+        </section>
+
+        <!-- Logs Section -->
+        <section>
+            <h2 class="text-lg font-semibold mb-4">รายการแจ้งเตือนล่าสุด</h2>
+            <div id="notificationLog" class="space-y-4">
+                <div class="text-center text-gray-400 py-8">ยังไม่มีการแจ้งเตือนเข้ามา...</div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // สถานะของแอป
+        let messaging = null;
+
+        const configInput = document.getElementById('configInput');
+        const saveConfigBtn = document.getElementById('saveConfig');
+        const tokenSection = document.getElementById('tokenSection');
+        const tokenDisplay = document.getElementById('tokenDisplay');
+        const notificationLog = document.getElementById('notificationLog');
+
+        // ฟังก์ชันแสดง Log การแจ้งเตือนบนหน้าจอ
+        function addNotificationToLog(payload) {
+            const { title, body } = payload.notification || { title: 'Background Msg', body: payload.data?.message || 'New Data' };
+            const time = new Date().toLocaleTimeString();
+            
+            const card = document.createElement('div');
+            card.className = 'notification-card bg-blue-50 border-l-4 border-blue-500 p-4 rounded shadow-sm';
+            card.innerHTML = `
+                <div class="flex justify-between items-start">
+                    <strong class="text-blue-800">${title}</strong>
+                    <span class="text-xs text-gray-400">${time}</span>
+                </div>
+                <p class="text-gray-600 text-sm mt-1">${body}</p>
+            `;
+            
+            if (notificationLog.firstChild && notificationLog.firstChild.classList.contains('text-gray-400')) {
+                notificationLog.innerHTML = '';
+            }
+            notificationLog.prepend(card);
+        }
+
+        // เริ่มต้น Firebase
+        saveConfigBtn.onclick = async () => {
+            try {
+                const configStr = configInput.value.trim();
+                // พยายามดึงค่า JSON จากข้อความที่ก๊อปมา (เผื่อคนก๊อปมาทั้งก้อน code)
+                const configMatch = configStr.match(/\{[\s\S]*\}/);
+                const firebaseConfig = JSON.parse(configMatch ? configMatch[0] : configStr);
+
+                if (!firebase.apps.length) {
+                    firebase.initializeApp(firebaseConfig);
+                }
+                
+                messaging = firebase.messaging();
+
+                // ขออนุญาตแจ้งเตือน
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    // ดึง Token
+                    const token = await messaging.getToken({
+                        vapidKey: 'ใส่_VAPID_KEY_ของคุณที่นี่' // หาได้ใน Project Settings -> Cloud Messaging -> Web Push certificates
+                    });
+
+                    if (token) {
+                        tokenSection.classList.remove('hidden');
+                        tokenDisplay.innerText = token;
+                        console.log('Token:', token);
+                    } else {
+                        alert('ไม่สามารถดึง Token ได้ โปรดตรวจสอบ VAPID Key');
+                    }
+                } else {
+                    alert('คุณต้องอนุญาตการแจ้งเตือนก่อน');
+                }
+
+                // รับข้อความขณะเปิดหน้าเว็บ (Foreground)
+                messaging.onMessage((payload) => {
+                    console.log('Message received. ', payload);
+                    addNotificationToLog(payload);
+                    
+                    // แสดง Browser Notification ด้วยมือในกรณี foreground
+                    new Notification(payload.notification.title, {
+                        body: payload.notification.body,
+                        icon: 'https://cdn-icons-png.flaticon.com/512/732/732200.png'
+                    });
+                });
+
+                saveConfigBtn.innerText = "เชื่อมต่อแล้ว ✓";
+                saveConfigBtn.classList.replace('bg-blue-600', 'bg-green-600');
+
+            } catch (error) {
+                console.error(error);
+                alert('เกิดข้อผิดพลาดในการตั้งค่า: ' + error.message);
+            }
+        };
+
+        // ฟังก์ชันคัดลอก Token
+        document.getElementById('copyToken').onclick = () => {
+            const text = tokenDisplay.innerText;
+            const elem = document.createElement('textarea');
+            document.body.appendChild(elem);
+            elem.value = text;
+            elem.select();
+            document.execCommand('copy');
+            document.body.removeChild(elem);
+            alert('คัดลอก Token เรียบร้อย!');
+        };
+    </script>
+</body>
+</html>
