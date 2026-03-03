@@ -1,0 +1,16 @@
+services:
+  ftp_server:
+    image: stilliard/pure-ftpd:hardened
+    container_name: pure-ftpd
+    ports:
+      - "21:21"
+      - "30000-30009:30000-30009"
+    volumes:
+      - "/data:/home/kittinan/"
+      - "./passwd:/etc/pure-ftpd/passwd"
+    environment:
+      PUBLICHOST: "localhost"
+      FTP_USER_NAME: kittinan
+      FTP_USER_PASS: mypass
+      FTP_USER_HOME: /home/kittinan
+    command: pure-ftpd -l puredb:/etc/pure-ftpd/pureftpd.pdb -E -j -R -P localhost -s -A -Z -H -4 -p 30000:30009 -c 5 -C 5 

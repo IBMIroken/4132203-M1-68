@@ -1,0 +1,6 @@
+services:
+  email:
+    image: djfarrelly/maildev 
+    ports:
+      - 25:25
+      - 8000:80
